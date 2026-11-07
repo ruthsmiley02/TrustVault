@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>TrustVault - Dashboard</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+    <div class="container">
+
+        <h1>TrustVault Dashboard</h1>
+
+        <h2>Welcome, {{ username }}!</h2>
+
+        <p>Your account is active.</p>
+
+        <h3>Available Features</h3>
+
+        <ul>
+            <li>Secure User Login</li>
+            <li>Password Hashing</li>
+            <li>Document Management</li>
+            <li>Role-Based Access Control</li>
+            <li>Activity Monitoring and Audit Logs</li>
+        </ul>
+
+        <hr>
+
+    {% if role == 'admin' %}
+        <p>
+            <a href="{{ url_for('audit_logs') }}">
+                View Audit Logs
+            </a>
+        </p>
+    {% endif %}
+
+        <h2>My Documents</h2>
+
+        <p>
+            <a href="{{ url_for('upload') }}">
+                Upload New Document
+            </a>
+        </p>
+
+        {% set my_documents = documents
+            | selectattr('owner', 'equalto', username)
+            | list %}
+
+        {% if my_documents %}
+
+        <table border="1" cellpadding="10" cellspacing="0">
+
+            <thead>
+                <tr>
+                    <th>Document Name</th>
+                    <th>Uploaded By</th>
+                    <th>Upload Date</th>
+                    <th>Download</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                {% for document in my_documents %}
+
+                <tr>
+                    <td>{{ document.filename }}</td>
+
+                    <td>{{ document.owner }}</td>
+
+                    <td>{{ document.uploaded_at }}</td>
+
+                    <td>
+                        <a href="{{ url_for('download_document', document_id=document.id) }}">
+                            Download
+                        </a>
+                    </td>
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+        {% else %}
+
+            <p>No documents uploaded yet.</p>
+
+        {% endif %}
+
+        <br>
+
+        <a class="logout" href="{{ url_for('logout') }}">
+            Logout
+        </a>
+
+    </div>
+
+</body>
+</html>
