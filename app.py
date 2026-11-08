@@ -1,4 +1,3 @@
-
 from flask import (
     Flask, render_template, request, redirect,
     url_for, session, flash, send_from_directory
@@ -7,27 +6,28 @@ from flask import (
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 
+from dotenv import load_dotenv
+
 from pathlib import Path
 from datetime import datetime
 import json
 import os
 import uuid
 
+load_dotenv()
 
 # --------------------------------
 # 1. FLASK APPLICATION
 # --------------------------------
-
 app = Flask(__name__)
 
 app.config["MAX_CONTENT_LENGTH"] = 5 * 1024 * 1024
 
 
-app.secret_key = os.environ.get(
-    "TRUSTVAULT_SECRET_KEY",
-    "trustvault_demo_secret_key"
-)
+app.secret_key = os.environ.get("TRUSTVAULT_SECRET_KEY")
 
+if not app.secret_key:
+    raise RuntimeError("TRUSTVAULT_SECRET_KEY is not set")
 
 # --------------------------------
 # 2. PROJECT FOLDERS
@@ -276,22 +276,61 @@ def login():
 # --------------------------------
 # 10. USER DASHBOARD
 # --------------------------------
-
 @app.route("/dashboard")
 def dashboard():
 
     if "username" not in session:
         return redirect(url_for("login"))
 
-    documents = load_documents()
+    username = session["username"]
+    all_documents = load_documents()
+
+    # Show documents owned by the user
+    # and documents shared with the user
+    documents = [
+        doc for doc in all_documents
+        if (
+            doc.get("owner") == username
+            or username in doc.get("shared_with", {})
+        )
+    ]
+
+    # Search by filename
+    search_query = request.args.get("search", "").strip().lower()
+
+    if search_query:
+        documents = [
+            doc for doc in documents
+            if search_query in doc.get("filename", "").lower()
+        ]
+    owner_query = request.args.get("owner", "").strip().lower()
+
+    if owner_query:
+        documents = [
+            doc for doc in documents
+            if owner_query in doc.get("owner", "").lower()
+        ]
+    category_query = request.args.get("category", "").strip().lower()
+
+    if category_query:
+        documents = [
+            doc for doc in documents
+            if category_query in doc.get("category", "").lower()
+        ]
+    date_query = request.args.get("date", "").strip()
+
+    if date_query:
+        documents = [
+            doc for doc in documents
+            if doc.get("uploaded_at", "").startswith(date_query)
+        ]
 
     return render_template(
         "dashboard.html",
-        username=session["username"],
+        username=username,
         documents=documents,
         role=session.get("role", "user")
     )
-
 
 
 
@@ -304,6 +343,9 @@ def upload():
 
     if "username" not in session:
         return redirect(url_for("login"))
+    if session.get("role") == "viewer":
+        flash("Viewers cannot upload documents.")
+        return redirect(url_for("dashboard"))
 
     if request.method == "POST":
 
@@ -340,7 +382,9 @@ def upload():
             "filename": original_name,
             "stored_name": stored_name,
             "owner": session["username"],
-            "uploaded_at": datetime.now().isoformat()
+            "uploaded_at": datetime.now().isoformat(),
+            "shared_with": {},
+            "category": "General"
         }
 
         documents.append(new_document)
@@ -365,6 +409,7 @@ def upload():
 # 12. SECURE DOCUMENT DOWNLOAD
 # --------------------------------
 
+
 @app.route("/download/<document_id>")
 def download_document(document_id):
 
@@ -382,12 +427,22 @@ def download_document(document_id):
         flash("Document not found.")
         return redirect(url_for("dashboard"))
 
-    if document.get("owner") != session["username"]:
+    username = session["username"]
+
+    # Check document owner
+    is_owner = document.get("owner") == username
+
+    # Check shared permissions
+    shared_with = document.get("shared_with", {})
+    permission = shared_with.get(username)
+
+    # Allow owner, read permission or edit permission
+    if not is_owner and permission not in ["read", "edit"]:
 
         add_audit_log(
-            session["username"],
+            username,
             "UNAUTHORIZED_DOWNLOAD",
-            "Attempted to download another user's document"
+            f"Attempted to download document ID: {document_id}"
         )
 
         flash("You are not authorized to download this document.")
@@ -406,7 +461,7 @@ def download_document(document_id):
         return redirect(url_for("dashboard"))
 
     add_audit_log(
-        session["username"],
+        username,
         "DOCUMENT_DOWNLOAD",
         f"Downloaded document: {document.get('filename', stored_name)}"
     )
@@ -417,6 +472,202 @@ def download_document(document_id):
         as_attachment=True,
         download_name=document.get("filename", stored_name)
     )
+
+
+
+@app.route("/delete/<document_id>", methods=["POST"])
+
+def delete_document(document_id):
+
+    if "username" not in session:
+        return redirect(url_for("login"))
+
+    # Viewers cannot delete documents
+    if session.get("role") == "viewer":
+        flash("Viewers cannot delete documents.")
+        return redirect(url_for("dashboard"))
+
+    username = session["username"]
+    documents = load_documents()
+
+    document = next(
+        (doc for doc in documents if doc.get("id") == document_id),
+        None
+    )
+
+    if document is None:
+        flash("Document not found.")
+        return redirect(url_for("dashboard"))
+
+    # Only the document owner can delete
+    if document.get("owner") != username:
+        add_audit_log(
+            username,
+            "UNAUTHORIZED_DELETE",
+            f"Attempted to delete document ID: {document_id}"
+        )
+        flash("Only the document owner can delete this document.")
+        return redirect(url_for("dashboard"))
+
+    stored_name = document.get("stored_name", "")
+
+    if not stored_name or Path(stored_name).name != stored_name:
+        flash("Invalid stored filename.")
+        return redirect(url_for("dashboard"))
+
+    file_path = UPLOAD_FOLDER / stored_name
+
+    try:
+        if file_path.is_file():
+            file_path.unlink()
+
+        documents = [
+            doc for doc in documents
+            if doc.get("id") != document_id
+        ]
+
+        save_documents(documents)
+
+        add_audit_log(
+            username,
+            "DOCUMENT_DELETE",
+            f"Deleted document: {document.get('filename', stored_name)}"
+        )
+
+        flash("Document deleted successfully.")
+
+    except OSError:
+        flash("Unable to delete the document.")
+
+    return redirect(url_for("dashboard"))
+
+
+@app.route("/share/<document_id>", methods=["POST"])
+def share_document(document_id):
+
+    if "username" not in session:
+        return redirect(url_for("login"))
+
+    # Viewers cannot share documents
+    if session.get("role") == "viewer":
+        flash("Viewers cannot share documents.")
+        return redirect(url_for("dashboard"))
+
+    documents = load_documents()
+
+    document = next(
+        (doc for doc in documents if doc.get("id") == document_id),
+        None
+    )
+
+    if document is None:
+        flash("Document not found.")
+        return redirect(url_for("dashboard"))
+
+    # Only the owner can share the document
+    if document.get("owner") != session["username"]:
+        add_audit_log(
+            session["username"],
+            "UNAUTHORIZED_SHARE",
+            f"Attempted to share document ID: {document_id}"
+        )
+        flash("Only the document owner can share it.")
+        return redirect(url_for("dashboard"))
+
+    username = request.form.get("username", "").strip()
+    permission = request.form.get("permission", "").strip().lower()
+
+    if not username:
+        flash("Please enter a username.")
+        return redirect(url_for("dashboard"))
+
+    if permission not in ["read", "edit"]:
+        flash("Invalid permission.")
+        return redirect(url_for("dashboard"))
+
+    if username == session["username"]:
+        flash("You already own this document.")
+        return redirect(url_for("dashboard"))
+
+    # Check whether the target user exists
+    users = load_users()
+
+    user_exists = any(
+        user.get("username") == username
+        for user in users
+    )
+
+    if not user_exists:
+        flash("User does not exist.")
+        return redirect(url_for("dashboard"))
+
+    # Assign permission
+    document.setdefault("shared_with", {})
+    document["shared_with"][username] = permission
+
+    save_documents(documents)
+
+    add_audit_log(
+        session["username"],
+        "DOCUMENT_SHARED",
+        f"Shared {document.get('filename')} with {username} ({permission})"
+    )
+
+    flash("Document shared successfully.")
+    return redirect(url_for("dashboard"))
+
+
+@app.route("/revoke/<document_id>", methods=["POST"])
+def revoke_access(document_id):
+
+    if "username" not in session:
+        return redirect(url_for("login"))
+
+    # Viewers cannot revoke document access
+    if session.get("role") == "viewer":
+        flash("Viewers cannot revoke access.")
+        return redirect(url_for("dashboard"))
+
+    documents = load_documents()
+
+    document = next(
+        (doc for doc in documents if doc.get("id") == document_id),
+        None
+    )
+
+    if document is None:
+        flash("Document not found.")
+        return redirect(url_for("dashboard"))
+
+    if document.get("owner") != session["username"]:
+        add_audit_log(
+            session["username"],
+            "UNAUTHORIZED_REVOKE",
+            f"Attempted to revoke access to document ID: {document_id}"
+        )
+        flash("Only the owner can revoke access.")
+        return redirect(url_for("dashboard"))
+
+    username = request.form.get("username", "").strip()
+
+    shared_with = document.get("shared_with", {})
+
+    if username not in shared_with:
+        flash("This user does not have access.")
+        return redirect(url_for("dashboard"))
+
+    del shared_with[username]
+
+    save_documents(documents)
+
+    add_audit_log(
+        session["username"],
+        "ACCESS_REVOKED",
+        f"Revoked access for {username} to {document.get('filename')}"
+    )
+
+    flash("Access revoked successfully.")
+    return redirect(url_for("dashboard"))
 
 
 # --------------------------------

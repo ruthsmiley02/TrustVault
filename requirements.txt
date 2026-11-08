@@ -1,2 +1,4 @@
 Flask
 Werkzeug
+pytest
+python-dotenv
