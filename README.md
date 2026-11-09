@@ -201,17 +201,27 @@ Run tests using:
 ```bash
 python -m pytest -v
 ```
+The current test suite contains 11 tests covering:
 
-The current test suite contains six tests:
+1. Application import.
+2. Dashboard authentication.
+3. Unauthorized document download.
+4. Unauthorized document deletion.
+5. Unauthorized document sharing.
+6. Administrator-only audit log access.
+7. Viewer upload restriction.
+8. Viewer access restriction.
+9. Viewer deletion restriction.
+10. Viewer sharing restriction.
+11. Revoked viewer access restriction.
 
-1. Application import test.
-2. Dashboard authentication test.
-3. Unauthorized document download test.
-4. Unauthorized document deletion test.
-5. Unauthorized document sharing test.
-6. Administrator-only audit log access test.
+**Latest recorded result: 11 passed.**
 
-**Latest recorded result: 6 passed.**
+Run tests using:
+
+```bash
+python -m pytest -v
+```
 
 ## 10. Deployment
 
