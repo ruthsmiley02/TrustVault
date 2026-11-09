@@ -130,7 +130,7 @@ For deployment, configure the required environment variables in the hosting prov
 python app.py
 ```
 
-Open:
+Open the application at:
 
 http://127.0.0.1:5000
 
@@ -151,15 +151,15 @@ The application uses secure filename handling and file extension validation.
 
 TrustVault supports three account roles.
 
-| User type | Permission |
+| User Type | Permission |
 |---|---|
 | Administrator (`admin`) | Access administrator audit logs and normal document features |
 | Document Owner (`user`) | Manage, download, share, revoke, and delete owned documents |
 | Viewer (`viewer`) | Download documents shared with them; cannot upload, share, revoke, or delete |
 
-### Per-document permissions
+### Per-document Permissions
 
-| Permission | Supported behavior |
+| Permission | Supported Behavior |
 |---|---|
 | Owner | Manage and share owned documents |
 | Read | View document details and download the document |
@@ -194,6 +194,7 @@ python -m pytest -v
 ```
 
 The current test suite contains 11 tests covering:
+
 1. Application import.
 2. Dashboard authentication.
 3. Unauthorized document download.
@@ -210,15 +211,15 @@ The current test suite contains 11 tests covering:
 
 ## 10. Deployment
 
-**Live application:**  
+**Live Application:**  
 https://trustvault-xfv8.onrender.com
 
-**Source code:**  
+**Source Code:**  
 https://github.com/ruthsmiley02/TrustVault
 
 The deployed application requires appropriate environment variables and suitable storage configuration.
 
-**Deployment note:** Temporary or ephemeral hosting storage may not retain uploaded files and JSON data across service restarts or redeployments.
+**Deployment Note:** Temporary or ephemeral hosting storage may not retain uploaded files and JSON data across service restarts or redeployments.
 
 ## 11. Demo Account Credentials
 
@@ -226,11 +227,11 @@ The following dedicated demonstration accounts are provided for testing the diff
 
 | Role | Username | Password |
 |---|---|---|
-| Administrator | `tvadmin` | Use the configured demo password |
-| Document Owner | `tvowner` | Use the configured demo password |
-| Viewer | `tvviewer` | Use the configured demo password |
+| Administrator | `tvadmin` | Ruthsmiley@2902|
+| Document Owner | `tvowner` | 123456789 |
+| Viewer | `tvviewer` | tvviewer@123 |
 
-Provide the actual dedicated demo passwords to evaluators through the approved challenge submission method. Do not reuse personal passwords or publish production secrets.
+Replace the password placeholders with the actual working dedicated demo passwords before publishing the README, if the challenge requires evaluators to log in using this file. Do not use personal or production passwords.
 
 ## 12. Known Limitations
 
