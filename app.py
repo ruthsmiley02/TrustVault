@@ -96,8 +96,9 @@ if admin_username and admin_password:
 
 
 
+
 # --------------------------------
-# CREATE VIEWER ACCOUNT FROM ENVIRONMENT
+# CREATE OR UPDATE VIEWER ACCOUNT
 # --------------------------------
 
 viewer_username = os.environ.get("TRUSTVAULT_VIEWER_USERNAME")
@@ -107,20 +108,26 @@ if viewer_username and viewer_password:
     with open(USERS_FILE, "r", encoding="utf-8") as file:
         users = json.load(file)
 
-    if not any(
-        user.get("username") == viewer_username
-        for user in users
-    ):
+    viewer = next(
+        (
+            user for user in users
+            if user.get("username") == viewer_username
+        ),
+        None
+    )
+
+    if viewer:
+        viewer["role"] = "viewer"
+        viewer["password"] = generate_password_hash(viewer_password)
+    else:
         users.append({
             "username": viewer_username,
             "password": generate_password_hash(viewer_password),
             "role": "viewer"
         })
 
-        with open(USERS_FILE, "w", encoding="utf-8") as file:
-            json.dump(users, file, indent=4)
-
-
+    with open(USERS_FILE, "w", encoding="utf-8") as file:
+        json.dump(users, file, indent=4)
 
 
 # --------------------------------
