@@ -64,8 +64,36 @@ for file_path in [
     DOCUMENTS_FILE,
     AUDIT_LOGS_FILE
 ]:
+
     if not file_path.exists():
         file_path.write_text("[]", encoding="utf-8")
+
+
+
+# --------------------------------
+# CREATE ADMIN ACCOUNT FROM ENVIRONMENT
+# --------------------------------
+
+admin_username = os.environ.get("TRUSTVAULT_ADMIN_USERNAME")
+admin_password = os.environ.get("TRUSTVAULT_ADMIN_PASSWORD")
+
+if admin_username and admin_password:
+    with open(USERS_FILE, "r", encoding="utf-8") as file:
+        users = json.load(file)
+
+    if not any(
+        user.get("username") == admin_username
+        for user in users
+    ):
+        users.append({
+            "username": admin_username,
+            "password": generate_password_hash(admin_password),
+            "role": "admin"
+        })
+
+        with open(USERS_FILE, "w", encoding="utf-8") as file:
+            json.dump(users, file, indent=4)
+
 
 
 # --------------------------------
