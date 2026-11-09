@@ -23,16 +23,14 @@ TrustVault uses session-based authentication.
 | Document Owner (`user`) | Upload, download, share, revoke access, and delete owned documents |
 | Viewer | Download documents shared with them; cannot upload, share, revoke, or delete |
 
-Note: In the current implementation, document owners use the account role `user`. Ownership is determined by the document's `owner` field.
+**Note:** In the current implementation, document owners use the account role `user`. Ownership is determined by the document's `owner` field.
 
 ## 4. Application Routes
 
 ### 4.1 Registration
 
-**Endpoint:** `/register`
-
-**Methods:** GET, POST
-
+**Endpoint:** `/register`  
+**Methods:** GET, POST  
 **Authorization:** Public
 
 **Purpose:**
@@ -44,10 +42,8 @@ Note: In the current implementation, document owners use the account role `user`
 
 ### 4.2 Login
 
-**Endpoint:** `/login`
-
-**Methods:** GET, POST
-
+**Endpoint:** `/login`  
+**Methods:** GET, POST  
 **Authorization:** Public
 
 **Purpose:**
@@ -59,24 +55,24 @@ Note: In the current implementation, document owners use the account role `user`
 
 ### 4.3 Dashboard
 
-**Endpoint:** `/dashboard`
-
-**Methods:** GET
-
+**Endpoint:** `/dashboard`  
+**Methods:** GET  
 **Authorization:** Authenticated users
 
 **Purpose:**
 - Displays the user's dashboard.
-- Shows owned documents and documents shared with the user.
-- Supports document search and filtering.
+- Shows documents owned by the user and documents shared with them.
+- Supports document search and filtering by:
+  - Filename
+  - Document owner
+  - Category
+  - Upload date
 - Hides owner-only controls from viewers.
 
 ### 4.4 Upload Document
 
-**Endpoint:** `/upload`
-
-**Methods:** GET, POST
-
+**Endpoint:** `/upload`  
+**Methods:** GET, POST  
 **Authorization:** Authenticated document owners; viewers are denied.
 
 **Purpose:**
@@ -88,10 +84,8 @@ Note: In the current implementation, document owners use the account role `user`
 
 ### 4.5 Download Document
 
-**Endpoint:** `/download/<document_id>`
-
-**Methods:** GET
-
+**Endpoint:** `/download/<document_id>`  
+**Methods:** GET  
 **Authorization:** Document owner or user with `read` or `edit` sharing permission.
 
 **Purpose:**
@@ -101,10 +95,8 @@ Note: In the current implementation, document owners use the account role `user`
 
 ### 4.6 Share Document
 
-**Endpoint:** `/share/<document_id>`
-
-**Methods:** POST
-
+**Endpoint:** `/share/<document_id>`  
+**Methods:** POST  
 **Authorization:** Document owner only; viewers are denied.
 
 **Purpose:**
@@ -114,10 +106,8 @@ Note: In the current implementation, document owners use the account role `user`
 
 ### 4.7 Revoke Document Access
 
-**Endpoint:** `/revoke/<document_id>`
-
-**Methods:** POST
-
+**Endpoint:** `/revoke/<document_id>`  
+**Methods:** POST  
 **Authorization:** Document owner only; viewers are denied.
 
 **Purpose:**
@@ -127,10 +117,8 @@ Note: In the current implementation, document owners use the account role `user`
 
 ### 4.8 Delete Document
 
-**Endpoint:** `/delete/<document_id>`
-
-**Methods:** POST
-
+**Endpoint:** `/delete/<document_id>`  
+**Methods:** POST  
 **Authorization:** Document owner only; viewers are denied.
 
 **Purpose:**
@@ -141,10 +129,8 @@ Note: In the current implementation, document owners use the account role `user`
 
 ### 4.9 Audit Logs
 
-**Endpoint:** `/audit-logs`
-
-**Methods:** GET
-
+**Endpoint:** `/audit-logs`  
+**Methods:** GET  
 **Authorization:** Administrator only
 
 **Purpose:**
@@ -154,10 +140,8 @@ Note: In the current implementation, document owners use the account role `user`
 
 ### 4.10 Logout
 
-**Endpoint:** `/logout`
-
-**Methods:** GET
-
+**Endpoint:** `/logout`  
+**Methods:** GET  
 **Authorization:** Authenticated users
 
 **Purpose:**
@@ -207,6 +191,7 @@ Automated security tests are maintained in:
 `tests/test_security.py`
 
 The tests cover:
+
 - Application initialization.
 - Authentication requirements.
 - Unauthorized document downloads.
@@ -219,7 +204,7 @@ The tests cover:
 - Viewer sharing restrictions.
 - Download prevention after access revocation.
 
-Latest test result: **11 tests passed**.
+**Latest test result: 11 tests passed.**
 
 ## 9. Limitations and Future Improvements
 
