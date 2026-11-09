@@ -110,10 +110,7 @@ if viewer_username and viewer_password:
         users = json.load(file)
 
     viewer = next(
-        (
-            user for user in users
-            if user.get("username") == viewer_username
-        ),
+        (user for user in users if user.get("username") == viewer_username),
         None
     )
 
@@ -129,13 +126,13 @@ if viewer_username and viewer_password:
 
     with open(USERS_FILE, "w", encoding="utf-8") as file:
         json.dump(users, file, indent=4)
-    
-        saved_viewer = next(
+
+    saved_viewer = next(
         (u for u in users if u.get("username") == viewer_username),
         None
     )
 
-    print("VIEWER CONFIGURED:", bool(viewer_username and viewer_password))
+    print("VIEWER CONFIGURED:", True)
     print("VIEWER FOUND:", bool(saved_viewer))
     print("VIEWER ROLE:", saved_viewer.get("role") if saved_viewer else "NOT FOUND")
     print(
