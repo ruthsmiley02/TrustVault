@@ -105,6 +105,9 @@ if admin_username and admin_password:
 viewer_username = os.environ.get("TRUSTVAULT_VIEWER_USERNAME")
 viewer_password = os.environ.get("TRUSTVAULT_VIEWER_PASSWORD")
 
+print("VIEWER USERNAME SET:", bool(viewer_username))
+print("VIEWER PASSWORD SET:", bool(viewer_password))
+
 if viewer_username and viewer_password:
     with open(USERS_FILE, "r", encoding="utf-8") as file:
         users = json.load(file)
